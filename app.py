@@ -30,7 +30,7 @@ from rune.core.validator import SpinozaValidator, SpinozaPrinciple  # noqa: E402
 # ---------------------------------------------------------------------------
 RUNE_API_URL = os.environ.get(
     "RUNE_API_URL",
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
 )
 RUNE_API_KEY = os.environ.get("RUNE_API_KEY", "")
 RATE_LIMIT = int(os.environ.get("RATE_LIMIT", "5"))
