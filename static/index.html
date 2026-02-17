@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ᚱ RUNE Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0F0B15;--surface:rgba(124,58,237,.08);--border:rgba(124,58,237,.2);
+  --primary:#7C3AED;--secondary:#06B6D4;--text:#E2E8F0;--muted:#94A3B8;
+  --glass:rgba(15,11,21,.7);--radius:16px;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(124,58,237,.12) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(6,182,212,.08) 0%,transparent 50%);pointer-events:none;z-index:0}
+
+.container{max-width:960px;margin:0 auto;padding:24px 16px;position:relative;z-index:1}
+
+/* Header */
+header{text-align:center;padding:40px 0 32px}
+header h1{font-size:2.4rem;font-weight:700;background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+header h1 span{font-size:2.8rem}
+header p{color:var(--muted);font-style:italic;font-size:.95rem}
+
+/* Glass panel */
+.panel{background:var(--glass);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;transition:opacity .4s,transform .4s}
+
+/* Input area */
+textarea{width:100%;min-height:120px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;padding:16px;color:var(--text);font-family:'Inter',sans-serif;font-size:.95rem;resize:vertical;transition:border-color .2s;outline:none}
+textarea:focus{border-color:var(--primary)}
+textarea::placeholder{color:var(--muted)}
+
+.actions{display:flex;align-items:center;gap:16px;margin-top:16px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border:none;border-radius:12px;font-family:'Inter',sans-serif;font-size:.95rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-primary{background:linear-gradient(135deg,var(--primary),#9333EA);color:#fff;box-shadow:0 4px 20px rgba(124,58,237,.3)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 28px rgba(124,58,237,.45)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.remaining{color:var(--muted);font-size:.85rem;margin-left:auto}
+
+/* Loading */
+.loading{display:none;text-align:center;padding:40px}
+.loading.active{display:block}
+.spinner{display:inline-block;font-size:2.4rem;animation:spin 1.2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading p{color:var(--muted);margin-top:12px;font-size:.9rem}
+
+/* Results */
+.results{display:none;opacity:0;transform:translateY(12px)}
+.results.visible{display:block;opacity:1;transform:translateY(0)}
+
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:640px){.compare{grid-template-columns:1fr}}
+.compare-col h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px}
+.compare-col pre{font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:320px;overflow-y:auto;background:rgba(0,0,0,.3);border-radius:10px;padding:14px;color:var(--text)}
+.compare-col.after pre{border:1px solid rgba(124,58,237,.25)}
+
+/* Spinoza */
+.spinoza-section{margin-top:20px}
+.spinoza-section h3{font-size:.95rem;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.scores{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:500px){.scores{grid-template-columns:repeat(2,1fr)}}
+.score-card{text-align:center;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:16px 8px;position:relative;overflow:hidden}
+.score-card .icon{font-size:1.4rem;margin-bottom:4px}
+.score-card .value{font-family:'JetBrains Mono',monospace;font-size:1.6rem;font-weight:700;color:var(--secondary)}
+.score-card .label{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:4px}
+.score-bar{height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:10px;overflow:hidden}
+.score-bar-fill{height:100%;background:var(--secondary);border-radius:2px;width:0;transition:width 1s ease-out}
+
+.overall{text-align:center;margin-top:20px;font-size:1rem;color:var(--muted)}
+.grade{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;margin:0 8px;text-shadow:0 0 20px currentColor;transition:color .3s,text-shadow .3s}
+.grade-A{color:#22C55E;text-shadow:0 0 24px rgba(34,197,94,.5)}
+.grade-B{color:#06B6D4;text-shadow:0 0 24px rgba(6,182,212,.5)}
+.grade-C{color:#EAB308;text-shadow:0 0 24px rgba(234,179,8,.5)}
+.grade-D{color:#F97316;text-shadow:0 0 24px rgba(249,115,22,.5)}
+.grade-F{color:#EF4444;text-shadow:0 0 24px rgba(239,68,68,.5)}
+
+/* Bottom actions */
+.bottom-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+.btn-sm{padding:8px 18px;border-radius:10px;font-size:.85rem;font-weight:500;background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--text);cursor:pointer;transition:all .2s}
+.btn-sm:hover{background:rgba(124,58,237,.15);border-color:var(--primary)}
+
+/* Footer */
+footer{text-align:center;padding:32px 0 16px;color:var(--muted);font-size:.8rem}
+footer a{color:var(--primary);text-decoration:none}
+footer a:hover{text-decoration:underline}
+
+/* Error toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:#EF4444;color:#fff;padding:12px 24px;border-radius:12px;font-size:.9rem;font-weight:500;z-index:100;transition:transform .3s;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1><span>ᚱ</span> RUNE Playground</h1>
+    <p>"Every prompt is a spell"</p>
+  </header>
+
+  <div class="panel">
+    <textarea id="prompt" placeholder="Enter your prompt... e.g. Build a REST API for a todo app with authentication" maxlength="5000"></textarea>
+    <div class="actions">
+      <button class="btn btn-primary" id="castBtn" onclick="cast()">🪄 Cast Spell</button>
+      <span class="remaining" id="remainingLabel">remaining: <span id="remainingCount">-</span>/<span id="limitCount">5</span></span>
+    </div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner">ᚱ</div>
+    <p>Transmuting your prompt through 8 layers...</p>
+  </div>
+
+  <div class="results" id="results">
+    <div class="panel">
+      <div class="compare">
+        <div class="compare-col before">
+          <h3>📝 Before (Raw Prompt)</h3>
+          <pre id="beforeText"></pre>
+        </div>
+        <div class="compare-col after">
+          <h3>✨ After (RUNE Enhanced)</h3>
+          <pre id="afterText"></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">🤖 Gemini Output</h3>
+      <pre id="geminiOutput" style="font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:320px;overflow-y:auto;background:rgba(0,0,0,.3);border-radius:10px;padding:14px"></pre>
+    </div>
+
+    <div class="panel spinoza-section">
+      <h3>🏛️ Spinoza Validation</h3>
+      <div class="scores">
+        <div class="score-card"><div class="icon">🔥</div><div class="value" id="s-conatus">0.00</div><div class="label">Conatus</div><div class="score-bar"><div class="score-bar-fill" id="bar-conatus"></div></div></div>
+        <div class="score-card"><div class="icon">🧠</div><div class="value" id="s-ratio">0.00</div><div class="label">Ratio</div><div class="score-bar"><div class="score-bar-fill" id="bar-ratio"></div></div></div>
+        <div class="score-card"><div class="icon">☀️</div><div class="value" id="s-laetitia">0.00</div><div class="label">Laetitia</div><div class="score-bar"><div class="score-bar-fill" id="bar-laetitia"></div></div></div>
+        <div class="score-card"><div class="icon">🌿</div><div class="value" id="s-natura">0.00</div><div class="label">Natura</div><div class="score-bar"><div class="score-bar-fill" id="bar-natura"></div></div></div>
+      </div>
+      <div class="overall">
+        Overall: <span class="grade" id="gradeLabel">-</span> (<span id="overallScore">0.00</span>)
+      </div>
+    </div>
+
+    <div class="bottom-actions">
+      <button class="btn-sm" onclick="copyEnhanced()">📋 Copy Enhanced</button>
+      <button class="btn-sm" onclick="shareResult()">🔗 Share</button>
+      <button class="btn-sm" onclick="window.open('https://github.com/neurabytelabs/rune','_blank')">⭐ Star on GitHub</button>
+    </div>
+  </div>
+
+  <footer>
+    Built with <a href="https://github.com/neurabytelabs/rune" target="_blank">RUNE Framework</a> by <a href="https://neurabytelabs.com" target="_blank">NeuraByte Labs</a>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let lastResult = null;
+
+async function init() {
+  // Load remaining from URL hash (shared link)
+  if (location.hash.length > 1) {
+    try {
+      const data = JSON.parse(decodeURIComponent(location.hash.slice(1)));
+      if (data.prompt) document.getElementById('prompt').value = data.prompt;
+    } catch {}
+  }
+  // Fetch remaining
+  try {
+    const r = await fetch('/api/remaining');
+    const d = await r.json();
+    document.getElementById('remainingCount').textContent = d.remaining;
+    document.getElementById('limitCount').textContent = d.limit;
+  } catch {}
+}
+
+async function cast() {
+  const prompt = document.getElementById('prompt').value.trim();
+  if (!prompt) { showToast('Please enter a prompt'); return; }
+
+  const btn = document.getElementById('castBtn');
+  btn.disabled = true;
+  document.getElementById('loading').classList.add('active');
+  document.getElementById('results').classList.remove('visible');
+
+  try {
+    const resp = await fetch('/api/cast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+
+    if (resp.status === 429) {
+      showToast('Rate limit exceeded — try again tomorrow!');
+      return;
+    }
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      showToast(err.error || 'Something went wrong');
+      return;
+    }
+
+    lastResult = await resp.json();
+    renderResult(prompt, lastResult);
+  } catch (e) {
+    showToast('Network error — is the server running?');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('loading').classList.remove('active');
+  }
+}
+
+function renderResult(prompt, data) {
+  document.getElementById('beforeText').textContent = prompt;
+  document.getElementById('afterText').textContent = data.enhanced;
+  document.getElementById('geminiOutput').textContent = data.raw_output;
+
+  // Update remaining
+  if (data.remaining !== undefined) {
+    document.getElementById('remainingCount').textContent = data.remaining;
+  }
+
+  // Spinoza scores — animate bars
+  const keys = ['conatus', 'ratio', 'laetitia', 'natura'];
+  keys.forEach(k => {
+    const v = data.spinoza[k];
+    document.getElementById('s-' + k).textContent = v.toFixed(2);
+    const bar = document.getElementById('bar-' + k);
+    bar.style.width = '0%';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => { bar.style.width = (v * 100) + '%'; });
+    });
+  });
+
+  document.getElementById('overallScore').textContent = data.spinoza.overall.toFixed(2);
+
+  const gradeEl = document.getElementById('gradeLabel');
+  gradeEl.textContent = data.spinoza.grade;
+  gradeEl.className = 'grade grade-' + data.spinoza.grade;
+
+  // Show results with animation
+  const results = document.getElementById('results');
+  results.style.display = 'block';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => { results.classList.add('visible'); });
+  });
+}
+
+function copyEnhanced() {
+  if (!lastResult) return;
+  navigator.clipboard.writeText(lastResult.enhanced).then(() => showToast('Copied to clipboard!')).catch(() => showToast('Copy failed'));
+}
+
+function shareResult() {
+  const prompt = document.getElementById('prompt').value.trim();
+  if (!prompt) return;
+  const hash = '#' + encodeURIComponent(JSON.stringify({ prompt }));
+  const url = location.origin + location.pathname + hash;
+  navigator.clipboard.writeText(url).then(() => showToast('Share link copied!')).catch(() => showToast('Copy failed'));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Allow Ctrl+Enter to cast
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') cast();
+});
+
+init();
+</script>
+</body>
+</html>
